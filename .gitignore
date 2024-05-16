@@ -4,3 +4,6 @@
 # Ignore Gradle build output directory
 build
 /lib/bin/main/UtilitiesToolLib/common/util/*.class
+/lib/bin/main/UtilitiesToolLib/*.class
+/lib/bin/main/UtilitiesToolLib/common/constant/*.class
+/lib/bin/main
