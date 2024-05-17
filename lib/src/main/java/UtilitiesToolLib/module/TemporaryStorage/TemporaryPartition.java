@@ -10,7 +10,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.ParameterizedType;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -34,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Getter
-public abstract class TemporaryPartition<K, T> implements Closeable {
+public class TemporaryPartition<K, T> extends AbstractTemporaryStorage<K, T> implements Closeable {
 
   /** Data alignment size in byte */
   private static final int DATA_ALIGNMENT_SIZE = 4;
@@ -50,7 +49,7 @@ public abstract class TemporaryPartition<K, T> implements Closeable {
   private String uuid;
 
   /** Data map */
-  private Map<K, T> dataMap;
+  protected Map<K, T> dataMap;
 
   /** Flag indicates whether data has been persisted into hard disk */
   private boolean persisted;
@@ -60,10 +59,6 @@ public abstract class TemporaryPartition<K, T> implements Closeable {
 
   /** The total size of all data in byte */
   private long size;
-
-  private Class<K> clazzKey;
-
-  private Class<T> clazzValue;
 
   /**
    * Create temporary partition storage
@@ -77,14 +72,11 @@ public abstract class TemporaryPartition<K, T> implements Closeable {
    * 
    * @param compress if true data will be compressed before writing to disk
    */
-  @SuppressWarnings("unchecked")
   public TemporaryPartition(boolean compress) {
+    super();
     this.uuid = UUID.randomUUID().toString();
     this.dataMap = new LinkedHashMap<>();
     this.compress = compress;
-    final ParameterizedType type = (ParameterizedType) this.getClass().getGenericSuperclass();
-    clazzKey = (Class<K>) type.getActualTypeArguments()[0];
-    clazzValue = (Class<T>) type.getActualTypeArguments()[1];
   }
 
   /**
@@ -92,14 +84,11 @@ public abstract class TemporaryPartition<K, T> implements Closeable {
    * 
    * @param compress if true data will be compressed before writing to disk
    */
-  @SuppressWarnings("unchecked")
-  public TemporaryPartition(boolean compress, TemporaryStorage<?, ?> temporaryStorage) {
+  public TemporaryPartition(boolean compress, Class<K> classKey, Class<T> classValue) {
+    super(classKey, classValue);
     this.uuid = UUID.randomUUID().toString();
     this.dataMap = new LinkedHashMap<>();
     this.compress = compress;
-    final ParameterizedType type = (ParameterizedType) temporaryStorage.getClass().getGenericSuperclass();
-    clazzKey = (Class<K>) type.getActualTypeArguments()[0];
-    clazzValue = (Class<T>) type.getActualTypeArguments()[1];
   }
 
   /**
@@ -268,11 +257,10 @@ public abstract class TemporaryPartition<K, T> implements Closeable {
 
           headerArray = bis.readNBytes(keyLength);
           String strKey = StorageUtil.convertByteArrayToString(headerArray);
-
-          if (clazzKey.equals(String.class)) {
+          if (getClazzKey().equals(String.class)) {
             dataLengthMap.put((K) strKey, dataLength);
           } else {
-            dataLengthMap.put(objectMapper.readValue(strKey, clazzKey), dataLength);
+            dataLengthMap.put(objectMapper.readValue(strKey, getClazzKey()), dataLength);
           }
         }
 
@@ -287,10 +275,11 @@ public abstract class TemporaryPartition<K, T> implements Closeable {
           byte[] dataArray = bis.readNBytes(dataLength);
 
           if (dataArray.length == dataLength) {
-            if (clazzValue.equals(String.class)) {
+            if (getClazzValue().equals(String.class)) {
               dataMap.put(key, (T) StorageUtil.convertByteArrayToString(dataArray));
             } else {
-              dataMap.put(key, objectMapper.readValue(StorageUtil.convertByteArrayToString(dataArray), clazzValue));
+              dataMap.put(key,
+                  objectMapper.readValue(StorageUtil.convertByteArrayToString(dataArray), getClazzValue()));
             }
           }
         }

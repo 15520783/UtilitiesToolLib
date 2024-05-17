@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
  * 
  */
 @Slf4j
-public abstract class TemporaryStorage<K, T> implements Closeable {
+public class TemporaryStorage<K, T> extends AbstractTemporaryStorage<K, T> implements Closeable {
 
   /** Active partition */
   private TemporaryPartition<K, T> activePartition;
@@ -28,6 +28,7 @@ public abstract class TemporaryStorage<K, T> implements Closeable {
   private boolean compress;
 
   protected TemporaryStorage(long limitSize, boolean compress) {
+    super();
     this.limitSize = limitSize;
     this.compress = compress;
     activePartition = createNewPartition();
@@ -142,6 +143,6 @@ public abstract class TemporaryStorage<K, T> implements Closeable {
    * @return TemporaryPartition
    */
   private TemporaryPartition<K, T> createNewPartition() {
-    return new TemporaryPartition<K, T>(this.compress, this) {};
+    return new TemporaryPartition<K, T>(this.compress, getClazzKey(), getClazzValue());
   }
 }
