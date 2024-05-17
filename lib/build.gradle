@@ -39,6 +39,10 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-core:2.17.1'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.1'
     
+    // https://mvnrepository.com/artifact/io.dropwizard/dropwizard-util
+    implementation 'io.dropwizard:dropwizard-util:4.0.7'
+    
+    
     annotationProcessor('org.projectlombok:lombok:1.18.6')
 }
 
